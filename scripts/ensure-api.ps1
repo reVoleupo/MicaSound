@@ -4,13 +4,37 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $apiDir = Join-Path $repoRoot "mica-sound-api"
 
+# 解析 git 代理:本地开发经 127.0.0.1:7897,CI 无本地代理则直连。
+# 可用 NCM_GIT_PROXY 覆盖,设为 'none' 强制直连。
+function Resolve-GitProxy {
+    if ($env:NCM_GIT_PROXY) {
+        if ($env:NCM_GIT_PROXY -eq 'none') { return $null }
+        return $env:NCM_GIT_PROXY
+    }
+    try {
+        $ok = Test-NetConnection 127.0.0.1 -Port 7897 -InformationLevel Quiet -WarningAction SilentlyContinue
+        if ($ok) { return "http://127.0.0.1:7897" }
+    } catch { }
+    return $null
+}
+
 if (Test-Path (Join-Path $apiDir "app.js")) {
     Write-Host "[✓] API 已存在: $apiDir" -ForegroundColor Green
 }
 else {
-    Write-Host "[i] 克隆 Asplla/NeteaseCloudMusicApi(经 7897 代理)..."
-    $proxy = "http://127.0.0.1:7897"
-    git -c http.proxy=$proxy -c https.proxy=$proxy clone --depth 1 https://github.com/Asplla/NeteaseCloudMusicApi.git $apiDir
+    Write-Host "[i] 克隆 Asplla/NeteaseCloudMusicApi..."
+    $proxy = Resolve-GitProxy
+    $cloneArgs = @("clone", "--depth", "1")
+    if ($proxy) {
+        Write-Host "    经代理 $proxy"
+        $cloneArgs += @("-c", "http.proxy=$proxy", "-c", "https.proxy=$proxy")
+    }
+    else {
+        Write-Host "    直连(无代理)"
+        $cloneArgs += @("-c", "http.proxy=", "-c", "https.proxy=")
+    }
+    $cloneArgs += @("https://github.com/Asplla/NeteaseCloudMusicApi.git", $apiDir)
+    & git @cloneArgs 2>&1 | Write-Host
     if ($LASTEXITCODE -ne 0) { throw "git clone 失败" }
 }
 
