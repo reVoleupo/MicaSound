@@ -1,0 +1,19 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# 自托管 API 依赖(不入库,CI 里按需生成或本地准备)
+mica-sound-api/
+
+# 本地配置与缓存
+*.local
+*.log
+local.settings.json
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
