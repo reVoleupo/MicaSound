@@ -1,0 +1,42 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node (for future API smoke test)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore
+        run: dotnet restore MicaSound.sln
+
+      - name: Build (Release)
+        run: dotnet build MicaSound.sln -c Release --no-restore --nologo
+
+      - name: Run CLI smoke test
+        shell: pwsh
+        env:
+          CI: "true"
+        run: |
+          pwsh -ExecutionPolicy Bypass -File scripts/ensure-api.ps1
+          dotnet run --project src/MicaSound.Cli/MicaSound.Cli.csproj -c Release --no-build
