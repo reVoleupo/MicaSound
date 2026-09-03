@@ -25,7 +25,6 @@ public sealed partial class MainWindow : Window
     private readonly MicaPlayerService _player = new();
     private NcmApiClient? _api;
     private readonly Microsoft.UI.Dispatching.DispatcherQueueTimer _timer;
-    private bool _syncSeek;
 
     public MainWindow()
     {
@@ -182,11 +181,9 @@ public sealed partial class MainWindow : Window
         var session = _player.Session;
         if (session is null) return;
         double dur = Math.Max(1, session.NaturalDuration.TotalSeconds);
-        _syncSeek = true;
         SeekBar.Minimum = 0;
         SeekBar.Maximum = dur;
         SeekBar.Value = session.Position.TotalSeconds;
-        _syncSeek = false;
     }
 }
 
