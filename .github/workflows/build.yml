@@ -27,14 +27,22 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build solution (Release, x64)
+      - name: Build solution (Release)
         shell: pwsh
         run: |
-          # windows-latest 自带 VS 完整工具链(含 MSIX/WinUI);via vswhere 定位 msbuild
+          # Core/ApiHost/Cli 为 AnyCPU,用解决方案默认平台编译
           $vsw = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $msb = (& $vsw -latest -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1)
           if (-not $msb) { throw "MSBuild not found" }
-          & $msb MicaSound.sln -restore -t:Build -p:Configuration=Release -p:Platform=x64 -v:m -nologo
+          & $msb MicaSound.sln -restore -t:Build -p:Configuration=Release -v:m -nologo
+
+      - name: Build WinUI App (Release, x64)
+        shell: pwsh
+        run: |
+          # App 为 WinUI 3 且 x64-only,需 VS 完整工具链,单独以 x64 编译
+          $vsw = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $msb = (& $vsw -latest -requires Microsoft.Component.MSBuild -find 'MSBuild\**\Bin\MSBuild.exe' | Select-Object -First 1)
+          & $msb src/MicaSound.App/MicaSound.App.csproj -restore -t:Build -p:Configuration=Release -p:Platform=x64 -v:m -nologo
 
       - name: Run CLI smoke test
         shell: pwsh
