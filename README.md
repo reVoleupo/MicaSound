@@ -19,7 +19,7 @@ src/
 ├─ MicaSound.Core/       # 纯逻辑类库(LRC 解析、数据模型)
 ├─ MicaSound.ApiHost/    # API 进程托管 + HTTP 桥接(ApiBridge)
 ├─ MicaSound.Cli/        # 命令行冒烟测试
-└─ MicaSound.App/        # WinUI 3 主程序(规划)
+└─ MicaSound.App/        # WinUI 3 主程序(Mica 背景 + 搜索/播放)
 scripts/
 ├─ ensure-api.ps1        # 克隆并准备自托管 API 服务
 └─ api-boot.js           # 绕过 generateConfig 卡死的启动器
@@ -32,10 +32,13 @@ scripts/
 # 1. 准备自托管 API 服务(克隆 Asplla fork + npm install)
 powershell -ExecutionPolicy Bypass -File scripts/ensure-api.ps1
 
-# 2. 构建
-dotnet build MicaSound.sln -c Release
+# 2. 构建(主程序为 WinUI 3,需 Visual Studio 工具链;CLI 可用 dotnet)
+msbuild MicaSound.sln -restore -t:Build -p:Configuration=Release -p:Platform=x64
 
-# 3. 运行冒烟测试(拉起进程 → 搜索 → 歌词解析 → 播放链接)
+# 3. 运行 WinUI 3 主程序
+& .\src\MicaSound.App\bin\x64\Release\net8.0-windows10.0.19041.0\win-x64\MicaSound.App.exe
+
+# 4. 冒烟测试(拉起进程 → 搜索 → 歌词解析 → 播放链接)
 dotnet run --project src/MicaSound.Cli/MicaSound.Cli.csproj -c Release
 ```
 
